@@ -1,5 +1,11 @@
+{-# LANGUAGE DeriveDataTypeable #-}
+
+import Data.Typeable (Typeable)
 import qualified Data.Text as T
 import qualified Data.Map as Map
+
+import Control.Exception
+import Control.Monad.Reader
 
 type ValCtx = Map.Map T.Text LispVal
 type FnCtx = Map.Map T.Text LispVal
@@ -9,6 +15,9 @@ data EnvCtx = EnvCtx
         env :: ValCtx,
         fenv :: FnCtx
     } deriving (Eq)
+
+newtype Eval a = Eval { unEval :: ReaderT EnvCtx IO a }
+      deriving (Monad, Functor, Applicative, MonadReader EnvCtx,  MonadIO)
 
 -- representation of the S-Expression
 data LispVal 
@@ -24,6 +33,9 @@ data LispVal
 
 instance Show LispVal where
     show = T.unpack . showVal
+
+data IFunc = IFunc { fn :: [LispVal] -> Eval LispVal }
+    deriving (Typeable) 
 
 showVal :: LispVal -> T.Text
 showVal val =
